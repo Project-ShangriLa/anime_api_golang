@@ -12,6 +12,13 @@ ShangriLa Anime APIのGolang実装です
 go build
 ```
 
+## DB設定
+
+MySQLに下記のDDLを実行してください
+
+https://github.com/Project-ShangriLa/anime_master_db_ddl
+
+
 ## 設定
 
 DBの接続を環境変数で管理しています
