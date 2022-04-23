@@ -16,9 +16,12 @@ import (
 
 var router = mux.NewRouter()
 
-//var cacheBases [][]byte
-
 var cacheBases = make(map[int][]byte)
+
+const (
+	APIKEY_HEADER_NAME = "X-API-KEY"
+	APIKEY_ENV_NAME    = "X_ANIME_API_KEY"
+)
 
 func init() {
 	http.Handle("/", router)
@@ -30,9 +33,12 @@ func init() {
 
 	router.HandleFunc("/anime/v1/master/{year_num:[0-9]{4}}/{cours:[1-4]}", animeAPIReadHandler).Methods("GET")
 
-	// TODO
-	// キャッシュクリア 環境変数　認証キーあり
-	// キャッシュ全更新 環境変数　認証キーあり
+	// キャッシュ全クリア 環境変数　認証キーあり
+	router.HandleFunc("/anime/v1/master/clear/all", clearAllBasesCache).Methods("POST")
+
+	//TODO
+	// キャッシュ指定クリア 環境変数　認証キーあり
+	// キャッシュ全再取得 環境変数　認証キーあり
 }
 
 func gormConnect() *gorm.DB {
@@ -264,7 +270,6 @@ product_companies
 }
 
 func selectBasesRdb(coursId int) ([]byte, error) {
-	// 指定した条件を元に複数のレコードを引っ張ってくる
 	db := gormConnect()
 	defer db.Close()
 
@@ -397,4 +402,15 @@ func year2coursID(r *http.Request) int {
 	coursID := (year-2014)*4 + cours
 
 	return coursID
+}
+
+func clearAllBasesCache(w http.ResponseWriter, r *http.Request) {
+	rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
+
+	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
+		cacheBases = make(map[int][]byte)
+		w.Write([]byte("[OK] Clear Cache ALL!\n"))
+	} else {
+		w.Write([]byte("[NG] Clear Cache error\n"))
+	}
 }
