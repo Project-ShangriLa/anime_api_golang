@@ -16,6 +16,10 @@ import (
 
 var router = mux.NewRouter()
 
+//var cacheBases [][]byte
+
+var cacheBases = make(map[int][]byte)
+
 func init() {
 	http.Handle("/", router)
 
@@ -26,6 +30,9 @@ func init() {
 
 	router.HandleFunc("/anime/v1/master/{year_num:[0-9]{4}}/{cours:[1-4]}", animeAPIReadHandler).Methods("GET")
 
+	// TODO
+	// キャッシュクリア 環境変数　認証キーあり
+	// キャッシュ全更新 環境変数　認証キーあり
 }
 
 func gormConnect() *gorm.DB {
@@ -144,11 +151,13 @@ func animeAPIReadHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Print(coursID)
 
-	// 指定した条件を元に複数のレコードを引っ張ってくる
-	db := gormConnect()
-	defer db.Close()
+	var res []byte
+	var err error
 
 	if r.FormValue("ogp") == "1" {
+		// 指定した条件を元に複数のレコードを引っ張ってくる
+		db := gormConnect()
+		defer db.Close()
 
 		baseWithOgp := []BaseJsonWithOgp{}
 
@@ -235,10 +244,33 @@ product_companies
 		w.Write(res)
 
 	} else {
+		if cacheBases[coursID] != nil {
+			log.Print("Hit cache")
+			res = cacheBases[coursID]
+		} else {
+			res, err = selectBasesRdb(coursID)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			log.Print("not cache. save cache")
+			cacheBases[coursID] = res
+		}
 
-		baseJsonList := []BaseJson{}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(res)
+	}
 
-		rows, _ := db.Table("bases").Select(`
+}
+
+func selectBasesRdb(coursId int) ([]byte, error) {
+	// 指定した条件を元に複数のレコードを引っ張ってくる
+	db := gormConnect()
+	defer db.Close()
+
+	baseJsonList := []BaseJson{}
+
+	rows, _ := db.Table("bases").Select(`
 id,
 title,
 title_short1,
@@ -257,48 +289,42 @@ city_code,
 city_name,
 product_companies
 `).
-			Where("cours_id = ?", coursID).Rows()
+		Where("cours_id = ?", coursId).Rows()
 
-		for rows.Next() {
+	for rows.Next() {
 
-			var bs Base
-			var bsj BaseJson
+		var bs Base
+		var bsj BaseJson
 
-			if err := rows.Scan(&bs.Id, &bs.Title, &bs.TitleShort1, &bs.TitleShort2, &bs.TitleShort3, &bs.TitleEn,
-				&bs.PublicURL, &bs.TwitterAccount, &bs.TwitterHashTag, &bs.CoursID, &bs.CreatedAt, &bs.UpdatedAt,
-				&bs.Sex, &bs.Sequel, &bs.CityCode, &bs.CityName, &bs.ProductCompanies); err != nil {
-				log.Fatal(err)
-			}
-
-			bsj.Id = bs.Id
-			bsj.Title = bs.Title
-			bsj.TitleShort1 = bs.TitleShort1.String
-			bsj.TitleShort2 = bs.TitleShort2.String
-			bsj.TitleShort3 = bs.TitleShort3.String
-			bsj.TitleEn = bs.TitleEn.String
-			bsj.PublicURL = bs.PublicURL
-			bsj.TwitterAccount = bs.TwitterAccount
-			bsj.TwitterHashTag = bs.TwitterHashTag
-			bsj.CreatedAt = bs.CreatedAt
-			bsj.UpdatedAt = bs.UpdatedAt
-			bsj.Sex = int(bs.Sex.Int64)
-			bsj.Sequel = int(bs.Sequel.Int64)
-			bsj.CityCode = int(bs.CityCode.Int64)
-			bsj.CityName = bs.CityName.String
-			bsj.ProductCompanies = bs.ProductCompanies.String
-
-			baseJsonList = append(baseJsonList, bsj)
+		if err := rows.Scan(&bs.Id, &bs.Title, &bs.TitleShort1, &bs.TitleShort2, &bs.TitleShort3, &bs.TitleEn,
+			&bs.PublicURL, &bs.TwitterAccount, &bs.TwitterHashTag, &bs.CoursID, &bs.CreatedAt, &bs.UpdatedAt,
+			&bs.Sex, &bs.Sequel, &bs.CityCode, &bs.CityName, &bs.ProductCompanies); err != nil {
+			log.Fatal(err)
 		}
 
-		res, err := json.Marshal(baseJsonList)
+		bsj.Id = bs.Id
+		bsj.Title = bs.Title
+		bsj.TitleShort1 = bs.TitleShort1.String
+		bsj.TitleShort2 = bs.TitleShort2.String
+		bsj.TitleShort3 = bs.TitleShort3.String
+		bsj.TitleEn = bs.TitleEn.String
+		bsj.PublicURL = bs.PublicURL
+		bsj.TwitterAccount = bs.TwitterAccount
+		bsj.TwitterHashTag = bs.TwitterHashTag
+		bsj.CreatedAt = bs.CreatedAt
+		bsj.UpdatedAt = bs.UpdatedAt
+		bsj.Sex = int(bs.Sex.Int64)
+		bsj.Sequel = int(bs.Sequel.Int64)
+		bsj.CityCode = int(bs.CityCode.Int64)
+		bsj.CityName = bs.CityName.String
+		bsj.ProductCompanies = bs.ProductCompanies.String
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Write(res)
+		baseJsonList = append(baseJsonList, bsj)
 	}
+
+	res, err := json.Marshal(baseJsonList)
+
+	return res, err
 
 }
 
