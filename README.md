@@ -29,7 +29,7 @@ export ANIME_API_DB_USER=
 export ANIME_API_DB_PASS=
 ````
 
-APIのKEYを環境変数で管理しています
+管理APIのKEYを環境変数で管理しています
 
 ```
 export X_ANIME_API_KEY=abcde
@@ -58,5 +58,11 @@ curl "http://localhost:8080/anime/v1/master/2021/3?ogp=1" | jq .
 ### キャッシュクリア
 
 ```
-curl -XPOST --header 'X-API-KEY:abcde' http://localhost:8080/anime/v1/master/clear/all
+curl -XPOST --header 'X-API-KEY:abcde' http://localhost:8080/anime/v1/master/cache/clear
+```
+
+### キャッシュ全更新(初期化)
+
+```
+curl -XPOST --header 'X-API-KEY:abcde' http://localhost:8080/anime/v1/master/cache/refresh
 ```

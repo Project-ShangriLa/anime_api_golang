@@ -21,6 +21,8 @@ var cacheBases = make(map[int][]byte)
 const (
 	APIKEY_HEADER_NAME = "X-API-KEY"
 	APIKEY_ENV_NAME    = "X_ANIME_API_KEY"
+	COURSID_MIN        = 1
+	COURSID_MAX        = 120 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数
 )
 
 func init() {
@@ -34,11 +36,13 @@ func init() {
 	router.HandleFunc("/anime/v1/master/{year_num:[0-9]{4}}/{cours:[1-4]}", animeAPIReadHandler).Methods("GET")
 
 	// キャッシュ全クリア 環境変数　認証キーあり
-	router.HandleFunc("/anime/v1/master/clear/all", clearAllBasesCache).Methods("POST")
+	router.HandleFunc("/anime/v1/master/cache/clear", cacheClear).Methods("POST")
+
+	// キャッシュ全再取得 環境変数　認証キーあり
+	router.HandleFunc("/anime/v1/master/cache/refresh", cacheRefresh).Methods("POST")
 
 	//TODO
 	// キャッシュ指定クリア 環境変数　認証キーあり
-	// キャッシュ全再取得 環境変数　認証キーあり
 }
 
 func gormConnect() *gorm.DB {
@@ -404,13 +408,36 @@ func year2coursID(r *http.Request) int {
 	return coursID
 }
 
-func clearAllBasesCache(w http.ResponseWriter, r *http.Request) {
+func cacheClear(w http.ResponseWriter, r *http.Request) {
 	rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
 
 	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
 		cacheBases = make(map[int][]byte)
-		w.Write([]byte("[OK] Clear Cache ALL!\n"))
+		w.Write([]byte("[OK] Clear Cache\n"))
 	} else {
 		w.Write([]byte("[NG] Clear Cache error\n"))
+	}
+}
+
+func cacheRefresh(w http.ResponseWriter, r *http.Request) {
+	rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
+
+	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
+		cacheBases = make(map[int][]byte)
+
+		db := gormConnect()
+		defer db.Close()
+
+		CoursInfoList := []CoursInfo{}
+		db.Find(&CoursInfoList)
+
+		for _, cil := range CoursInfoList {
+			res, _ := selectBasesRdb(cil.Id)
+			cacheBases[cil.Id] = res
+		}
+
+		w.Write([]byte("[OK] Refresh Cache\n"))
+	} else {
+		w.Write([]byte("[NG] Refresh Cache error\n"))
 	}
 }
