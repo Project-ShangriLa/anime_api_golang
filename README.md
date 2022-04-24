@@ -12,6 +12,13 @@ ShangriLa Anime APIのGolang実装です
 go build
 ```
 
+or 
+
+```
+GOOS=linux GOARCH=arm64 go build -o anime_master_api_linux
+```
+
+
 ## DB設定
 
 MySQLに下記のDDLを実行してください

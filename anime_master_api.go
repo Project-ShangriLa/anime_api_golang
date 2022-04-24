@@ -23,7 +23,7 @@ const (
 	APIKEY_HEADER_NAME = "X-API-KEY"
 	APIKEY_ENV_NAME    = "X_ANIME_API_KEY"
 	COURSID_MIN        = 1
-	COURSID_MAX        = 120 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数
+	COURSID_MAX        = 104 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数、2039年までリクエストを許容
 )
 
 func init() {
@@ -164,6 +164,11 @@ func animeAPIReadHandler(w http.ResponseWriter, r *http.Request) {
 
 	var res []byte
 	var err error
+
+	if coursID < COURSID_MIN || coursID > COURSID_MAX {
+		http.Error(w, "COURSID OVER", http.StatusBadRequest)
+		return
+	}
 
 	if r.FormValue("ogp") == "1" {
 		if cacheBasesWithOgp[coursID] != nil {
