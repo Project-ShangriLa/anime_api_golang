@@ -17,6 +17,7 @@ import (
 var router = mux.NewRouter()
 
 var cacheBases = make(map[int][]byte)
+var cacheBasesWithOgp = make(map[int][]byte)
 
 const (
 	APIKEY_HEADER_NAME = "X-API-KEY"
@@ -165,94 +166,20 @@ func animeAPIReadHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if r.FormValue("ogp") == "1" {
-		// 指定した条件を元に複数のレコードを引っ張ってくる
-		db := gormConnect()
-		defer db.Close()
-
-		baseWithOgp := []BaseJsonWithOgp{}
-
-		log.Print("With OGP option")
-
-		rows, _ := db.Table("bases").Select(`
-id,
-title,
-title_short1,
-title_short2,
-title_short3,
-title_en,
-bases.public_url as public_url,
-twitter_account,
-twitter_hash_tag,
-cours_id,
-bases.created_at as created_at,
-bases.updated_at as updated_at,
-sex,
-sequel,
-city_code,
-city_name,
-og_title, 
-og_type, 
-og_description, 
-og_url, 
-og_image,
-og_site_name,
-product_companies
-`).
-			Joins("join site_meta_data on bases.id = site_meta_data.bases_id and cours_id = ?", coursID).Rows()
-
-		for rows.Next() {
-
-			var bs Base
-			var ogp Ogp
-
-			var bsj BaseJsonWithOgp
-			var ogpj OgpJson
-
-			if err := rows.Scan(&bs.Id, &bs.Title, &bs.TitleShort1, &bs.TitleShort2, &bs.TitleShort3, &bs.TitleEn,
-				&bs.PublicURL, &bs.TwitterAccount, &bs.TwitterHashTag, &bs.CoursID, &bs.CreatedAt, &bs.UpdatedAt,
-				&bs.Sex, &bs.Sequel, &bs.CityCode, &bs.CityName,
-				&ogp.OgTitle, &ogp.OgType, &ogp.OgDescription, &ogp.OgUrl, &ogp.OgImage, &ogp.OgSiteName, &bs.ProductCompanies); err != nil {
-				log.Fatal(err)
+		if cacheBasesWithOgp[coursID] != nil {
+			log.Print("Hit cache ogp")
+			res = cacheBasesWithOgp[coursID]
+		} else {
+			res, err = selectBasesWithOgpRdb(coursID)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
-
-			bsj.Id = bs.Id
-			bsj.Title = bs.Title
-			bsj.TitleShort1 = bs.TitleShort1.String
-			bsj.TitleShort2 = bs.TitleShort2.String
-			bsj.TitleShort3 = bs.TitleShort3.String
-			bsj.TitleEn = bs.TitleEn.String
-			bsj.PublicURL = bs.PublicURL
-			bsj.TwitterAccount = bs.TwitterAccount
-			bsj.TwitterHashTag = bs.TwitterHashTag
-			bsj.CreatedAt = bs.CreatedAt
-			bsj.UpdatedAt = bs.UpdatedAt
-			bsj.Sex = int(bs.Sex.Int64)
-			bsj.Sequel = int(bs.Sequel.Int64)
-			bsj.CityCode = int(bs.CityCode.Int64)
-			bsj.CityName = bs.CityName.String
-			bsj.ProductCompanies = bs.ProductCompanies.String
-
-			ogpj.OgTitle = ogp.OgTitle.String
-			ogpj.OgType = ogp.OgType.String
-			ogpj.OgDescription = ogp.OgDescription.String
-			ogpj.OgUrl = ogp.OgUrl.String
-			ogpj.OgSiteName = ogp.OgSiteName.String
-			ogpj.OgImage = ogp.OgImage.String
-
-			bsj.Ogp = ogpj
-
-			baseWithOgp = append(baseWithOgp, bsj)
-		}
-
-		res, err := json.Marshal(baseWithOgp)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			log.Print("not cache. save cache ogp")
+			cacheBasesWithOgp[coursID] = res
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Write(res)
-
 	} else {
 		if cacheBases[coursID] != nil {
 			log.Print("Hit cache")
@@ -337,6 +264,91 @@ product_companies
 
 }
 
+func selectBasesWithOgpRdb(coursId int) ([]byte, error) {
+	// 指定した条件を元に複数のレコードを引っ張ってくる
+	db := gormConnect()
+	defer db.Close()
+
+	baseWithOgp := []BaseJsonWithOgp{}
+
+	//log.Print("With OGP option")
+
+	rows, _ := db.Table("bases").Select(`
+	id,
+	title,
+	title_short1,
+	title_short2,
+	title_short3,
+	title_en,
+	bases.public_url as public_url,
+	twitter_account,
+	twitter_hash_tag,
+	cours_id,
+	bases.created_at as created_at,
+	bases.updated_at as updated_at,
+	sex,
+	sequel,
+	city_code,
+	city_name,
+	og_title, 
+	og_type, 
+	og_description, 
+	og_url, 
+	og_image,
+	og_site_name,
+	product_companies
+	`).
+		Joins("join site_meta_data on bases.id = site_meta_data.bases_id and cours_id = ?", coursId).Rows()
+
+	for rows.Next() {
+
+		var bs Base
+		var ogp Ogp
+
+		var bsj BaseJsonWithOgp
+		var ogpj OgpJson
+
+		if err := rows.Scan(&bs.Id, &bs.Title, &bs.TitleShort1, &bs.TitleShort2, &bs.TitleShort3, &bs.TitleEn,
+			&bs.PublicURL, &bs.TwitterAccount, &bs.TwitterHashTag, &bs.CoursID, &bs.CreatedAt, &bs.UpdatedAt,
+			&bs.Sex, &bs.Sequel, &bs.CityCode, &bs.CityName,
+			&ogp.OgTitle, &ogp.OgType, &ogp.OgDescription, &ogp.OgUrl, &ogp.OgImage, &ogp.OgSiteName, &bs.ProductCompanies); err != nil {
+			log.Fatal(err)
+		}
+
+		bsj.Id = bs.Id
+		bsj.Title = bs.Title
+		bsj.TitleShort1 = bs.TitleShort1.String
+		bsj.TitleShort2 = bs.TitleShort2.String
+		bsj.TitleShort3 = bs.TitleShort3.String
+		bsj.TitleEn = bs.TitleEn.String
+		bsj.PublicURL = bs.PublicURL
+		bsj.TwitterAccount = bs.TwitterAccount
+		bsj.TwitterHashTag = bs.TwitterHashTag
+		bsj.CreatedAt = bs.CreatedAt
+		bsj.UpdatedAt = bs.UpdatedAt
+		bsj.Sex = int(bs.Sex.Int64)
+		bsj.Sequel = int(bs.Sequel.Int64)
+		bsj.CityCode = int(bs.CityCode.Int64)
+		bsj.CityName = bs.CityName.String
+		bsj.ProductCompanies = bs.ProductCompanies.String
+
+		ogpj.OgTitle = ogp.OgTitle.String
+		ogpj.OgType = ogp.OgType.String
+		ogpj.OgDescription = ogp.OgDescription.String
+		ogpj.OgUrl = ogp.OgUrl.String
+		ogpj.OgSiteName = ogp.OgSiteName.String
+		ogpj.OgImage = ogp.OgImage.String
+
+		bsj.Ogp = ogpj
+
+		baseWithOgp = append(baseWithOgp, bsj)
+	}
+
+	res, err := json.Marshal(baseWithOgp)
+
+	return res, err
+}
+
 type CoursInfo struct {
 	Id    int `json:"id"`
 	Year  int `json:"year"`
@@ -413,6 +425,7 @@ func cacheClear(w http.ResponseWriter, r *http.Request) {
 
 	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
 		cacheBases = make(map[int][]byte)
+		cacheBasesWithOgp = make(map[int][]byte)
 		w.Write([]byte("[OK] Clear Cache\n"))
 	} else {
 		w.Write([]byte("[NG] Clear Cache error\n"))
@@ -424,7 +437,7 @@ func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 
 	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
 		cacheBases = make(map[int][]byte)
-
+		cacheBasesWithOgp = make(map[int][]byte)
 		db := gormConnect()
 		defer db.Close()
 
@@ -434,6 +447,8 @@ func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 		for _, cil := range CoursInfoList {
 			res, _ := selectBasesRdb(cil.Id)
 			cacheBases[cil.Id] = res
+			res, _ = selectBasesWithOgpRdb(cil.Id)
+			cacheBasesWithOgp[cil.Id] = res
 		}
 
 		w.Write([]byte("[OK] Refresh Cache\n"))
