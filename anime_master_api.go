@@ -78,32 +78,29 @@ func main() {
 }
 
 type Base struct {
-	Id               int            `json:"id"`
-	Title            string         `json:"title"`
-	TitleShort1      sql.NullString `json:"title_short1"`
-	TitleShort2      sql.NullString `json:"title_short2"`
-	TitleShort3      sql.NullString `json:"title_short3"`
-	TitleEn          sql.NullString `json:"title_en"`
-	PublicURL        string         `json:"public_url"`
-	TwitterAccount   string         `json:"twitter_account"`
-	TwitterHashTag   string         `json:"twitter_hash_tag"`
-	CoursID          int            `json:"cours_id"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	Sex              sql.NullInt64  `json:"sex"`
-	Sequel           sql.NullInt64  `json:"sequel"`
-	CityCode         sql.NullInt64  `json:"city_code"`
-	CityName         sql.NullString `json:"city_name"`
-	ProductCompanies sql.NullString `json:"product_companies"`
-}
-
-type Ogp struct {
-	OgTitle       sql.NullString
-	OgType        sql.NullString
-	OgDescription sql.NullString
-	OgUrl         sql.NullString
-	OgImage       sql.NullString
-	OgSiteName    sql.NullString
+	Id               int
+	Title            string
+	TitleShort1      sql.NullString
+	TitleShort2      sql.NullString
+	TitleShort3      sql.NullString
+	TitleEn          sql.NullString
+	PublicURL        string
+	TwitterAccount   string
+	TwitterHashTag   string
+	CoursID          int
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Sex              sql.NullInt64
+	Sequel           sql.NullInt64
+	CityCode         sql.NullInt64
+	CityName         sql.NullString
+	ProductCompanies sql.NullString
+	OgTitle          sql.NullString
+	OgType           sql.NullString
+	OgDescription    sql.NullString
+	OgUrl            sql.NullString
+	OgImage          sql.NullString
+	OgSiteName       sql.NullString
 }
 
 type BaseJson struct {
@@ -136,24 +133,8 @@ type OgpJson struct {
 }
 
 type BaseJsonWithOgp struct {
-	Id               int       `json:"id"`
-	Title            string    `json:"title"`
-	TitleShort1      string    `json:"title_short1"`
-	TitleShort2      string    `json:"title_short2"`
-	TitleShort3      string    `json:"title_short3"`
-	TitleEn          string    `json:"title_en"`
-	PublicURL        string    `json:"public_url"`
-	TwitterAccount   string    `json:"twitter_account"`
-	TwitterHashTag   string    `json:"twitter_hash_tag"`
-	CoursID          int       `json:"cours_id"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
-	Sex              int       `json:"sex"`
-	Sequel           int       `json:"sequel"`
-	CityCode         int       `json:"city_code"`
-	CityName         string    `json:"city_name"`
-	ProductCompanies string    `json:"product_companies"`
-	Ogp              OgpJson   `json:"ogp"`
+	BaseJson
+	Ogp OgpJson `json:"ogp"`
 }
 
 func animeAPIReadHandler(w http.ResponseWriter, r *http.Request) {
@@ -308,15 +289,13 @@ func selectBasesWithOgpRdb(coursId int) ([]byte, error) {
 	for rows.Next() {
 
 		var bs Base
-		var ogp Ogp
-
 		var bsj BaseJsonWithOgp
 		var ogpj OgpJson
 
 		if err := rows.Scan(&bs.Id, &bs.Title, &bs.TitleShort1, &bs.TitleShort2, &bs.TitleShort3, &bs.TitleEn,
 			&bs.PublicURL, &bs.TwitterAccount, &bs.TwitterHashTag, &bs.CoursID, &bs.CreatedAt, &bs.UpdatedAt,
 			&bs.Sex, &bs.Sequel, &bs.CityCode, &bs.CityName,
-			&ogp.OgTitle, &ogp.OgType, &ogp.OgDescription, &ogp.OgUrl, &ogp.OgImage, &ogp.OgSiteName, &bs.ProductCompanies); err != nil {
+			&bs.OgTitle, &bs.OgType, &bs.OgDescription, &bs.OgUrl, &bs.OgImage, &bs.OgSiteName, &bs.ProductCompanies); err != nil {
 			log.Fatal(err)
 		}
 
@@ -337,12 +316,12 @@ func selectBasesWithOgpRdb(coursId int) ([]byte, error) {
 		bsj.CityName = bs.CityName.String
 		bsj.ProductCompanies = bs.ProductCompanies.String
 
-		ogpj.OgTitle = ogp.OgTitle.String
-		ogpj.OgType = ogp.OgType.String
-		ogpj.OgDescription = ogp.OgDescription.String
-		ogpj.OgUrl = ogp.OgUrl.String
-		ogpj.OgSiteName = ogp.OgSiteName.String
-		ogpj.OgImage = ogp.OgImage.String
+		ogpj.OgTitle = bs.OgTitle.String
+		ogpj.OgType = bs.OgType.String
+		ogpj.OgDescription = bs.OgDescription.String
+		ogpj.OgUrl = bs.OgUrl.String
+		ogpj.OgSiteName = bs.OgSiteName.String
+		ogpj.OgImage = bs.OgImage.String
 
 		bsj.Ogp = ogpj
 
