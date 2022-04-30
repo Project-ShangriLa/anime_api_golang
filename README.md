@@ -9,13 +9,13 @@ ShangriLa Anime APIのGolang実装です
 ## BUILD
 
 ```
-go build
+go build -trimpath -ldflags '-s -w'
 ```
 
 or 
 
 ```
-GOOS=linux GOARCH=arm64 go build -o anime_master_api_linux
+GOOS=linux GOARCH=arm64 go build -trimpath -ldflags '-s -w' -o anime_master_api_linux
 ```
 
 
