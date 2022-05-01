@@ -363,7 +363,10 @@ func coursHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Write(res)
+	_, error := w.Write(res)
+	if error != nil {
+		log.Println(error)
+	}
 }
 
 func yearTitleHandler(w http.ResponseWriter, r *http.Request) {
@@ -393,7 +396,10 @@ func yearTitleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Write(res)
+	_, error := w.Write(res)
+	if error != nil {
+		log.Println(error)
+	}
 }
 
 // TODO 暫定的に手動で計算、本来は管理テーブルからcours_idを算出

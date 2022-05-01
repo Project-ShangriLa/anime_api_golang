@@ -50,10 +50,18 @@ export X_ANIME_API_KEY=abcde
 
 ## 動作確認
 
+### COURS
+
+```
+curl http://localhost:8080/anime/v1/master/cours | jq .
+```
+
+### YEAR
 ```
 curl http://localhost:8080/anime/v1/master/2021 | jq .
 ```
 
+### YEAR-COURS
 ```
 curl http://localhost:8080/anime/v1/master/2021/3 | jq .
 ```
