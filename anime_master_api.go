@@ -419,9 +419,11 @@ func cacheClear(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
 		cacheBases = make(map[int][]byte)
 		cacheBasesWithOgp = make(map[int][]byte)
+		//nolint:errcheck
 		w.Write([]byte("[OK] Clear Cache\n"))
 	} else {
-		w.Write([]byte("[NG] Clear Cache error\n"))
+		//nolint:errcheck
+		w.Write([]byte("[NG] Clear Cache Error\n"))
 	}
 }
 
@@ -443,9 +445,10 @@ func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 			res, _ = selectBasesWithOgpRdb(cil.Id)
 			cacheBasesWithOgp[cil.Id] = res
 		}
-
+		//nolint:errcheck
 		w.Write([]byte("[OK] Refresh Cache.\n"))
 	} else {
+		//nolint:errcheck
 		w.Write([]byte("[NG] ERROR Refresh Cache.\n"))
 	}
 }
