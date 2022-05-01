@@ -74,7 +74,10 @@ func gormConnect() *gorm.DB {
 }
 
 func main() {
-	http.ListenAndServe(":8080", nil)
+	error := http.ListenAndServe(":8080", nil)
+	if error != nil {
+		log.Print(error)
+	}
 }
 
 type Base struct {
@@ -435,8 +438,8 @@ func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 			cacheBasesWithOgp[cil.Id] = res
 		}
 
-		w.Write([]byte("[OK] Refresh Cache\n"))
+		w.Write([]byte("[OK] Refresh Cache.\n"))
 	} else {
-		w.Write([]byte("[NG] Refresh Cache error\n"))
+		w.Write([]byte("[NG] ERROR Refresh Cache.\n"))
 	}
 }
