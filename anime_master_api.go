@@ -22,7 +22,6 @@ const (
 )
 
 var router = mux.NewRouter()
-var router2 = mux.NewRouter()
 var cacheBases = make(map[int][]byte)
 var cacheBasesWithOgp = make(map[int][]byte)
 var apikey = os.Getenv(APIKEY_ENV_NAME)
@@ -37,14 +36,15 @@ func init() {
 
 	router.HandleFunc("/anime/v1/master/{year_num:[0-9]{4}}/{cours:[1-4]}", animeAPIReadHandler).Methods("GET")
 
-	http.Handle("/anime/v1/master/cache/", router2)
+	// https://github.com/gorilla/mux/issues/445
+	protected := router.PathPrefix("/anime/v1/master/cache").Subrouter()
 
 	// キャッシュ全クリア 環境変数　認証キーあり
-	router2.HandleFunc("/anime/v1/master/cache/clear", cacheClear).Methods("POST")
+	protected.HandleFunc("/clear", cacheClear).Methods("POST")
 	// キャッシュ全再取得 環境変数　認証キーあり
-	router2.HandleFunc("/anime/v1/master/cache/refresh", cacheRefresh).Methods("POST")
+	protected.HandleFunc("/refresh", cacheRefresh).Methods("POST")
 
-	router2.Use(middlewareAuthAPI)
+	protected.Use(middlewareAuthAPI)
 	//TODO
 	// キャッシュ指定クリア 環境変数　認証キーあり
 }
@@ -424,29 +424,22 @@ func cacheClear(w http.ResponseWriter, r *http.Request) {
 }
 
 func cacheRefresh(w http.ResponseWriter, r *http.Request) {
-	rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
+	cacheBases = make(map[int][]byte)
+	cacheBasesWithOgp = make(map[int][]byte)
+	db := gormConnect()
+	defer db.Close()
 
-	if apikey != "" && rApiKey == apikey {
-		cacheBases = make(map[int][]byte)
-		cacheBasesWithOgp = make(map[int][]byte)
-		db := gormConnect()
-		defer db.Close()
+	CoursInfoList := []CoursInfo{}
+	db.Find(&CoursInfoList)
 
-		CoursInfoList := []CoursInfo{}
-		db.Find(&CoursInfoList)
-
-		for _, cil := range CoursInfoList {
-			res, _ := selectBasesRdb(cil.Id)
-			cacheBases[cil.Id] = res
-			res, _ = selectBasesWithOgpRdb(cil.Id)
-			cacheBasesWithOgp[cil.Id] = res
-		}
-		//nolint:errcheck
-		w.Write([]byte("[OK] Refresh Cache.\n"))
-	} else {
-		//nolint:errcheck
-		w.Write([]byte("[NG] ERROR Refresh Cache.\n"))
+	for _, cil := range CoursInfoList {
+		res, _ := selectBasesRdb(cil.Id)
+		cacheBases[cil.Id] = res
+		res, _ = selectBasesWithOgpRdb(cil.Id)
+		cacheBasesWithOgp[cil.Id] = res
 	}
+	//nolint:errcheck
+	w.Write([]byte("[OK] Refresh Cache.\n"))
 }
 
 func middlewareAuthAPI(next http.Handler) http.Handler {
