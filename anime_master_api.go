@@ -22,6 +22,7 @@ const (
 )
 
 var router = mux.NewRouter()
+var router2 = mux.NewRouter()
 var cacheBases = make(map[int][]byte)
 var cacheBasesWithOgp = make(map[int][]byte)
 var apikey = os.Getenv(APIKEY_ENV_NAME)
@@ -36,12 +37,14 @@ func init() {
 
 	router.HandleFunc("/anime/v1/master/{year_num:[0-9]{4}}/{cours:[1-4]}", animeAPIReadHandler).Methods("GET")
 
+	http.Handle("/anime/v1/master/cache/", router2)
+
 	// キャッシュ全クリア 環境変数　認証キーあり
-	router.HandleFunc("/anime/v1/master/cache/clear", cacheClear).Methods("POST")
-
+	router2.HandleFunc("/anime/v1/master/cache/clear", cacheClear).Methods("POST")
 	// キャッシュ全再取得 環境変数　認証キーあり
-	router.HandleFunc("/anime/v1/master/cache/refresh", cacheRefresh).Methods("POST")
+	router2.HandleFunc("/anime/v1/master/cache/refresh", cacheRefresh).Methods("POST")
 
+	router2.Use(middlewareAuthAPI)
 	//TODO
 	// キャッシュ指定クリア 環境変数　認証キーあり
 }
@@ -414,17 +417,10 @@ func year2coursID(r *http.Request) int {
 }
 
 func cacheClear(w http.ResponseWriter, r *http.Request) {
-	rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
-
-	if apikey != "" && rApiKey == apikey {
-		cacheBases = make(map[int][]byte)
-		cacheBasesWithOgp = make(map[int][]byte)
-		//nolint:errcheck
-		w.Write([]byte("[OK] Clear Cache\n"))
-	} else {
-		//nolint:errcheck
-		w.Write([]byte("[NG] Clear Cache Error\n"))
-	}
+	cacheBases = make(map[int][]byte)
+	cacheBasesWithOgp = make(map[int][]byte)
+	//nolint:errcheck
+	w.Write([]byte("[OK] Clear Cache\n"))
 }
 
 func cacheRefresh(w http.ResponseWriter, r *http.Request) {
@@ -451,4 +447,17 @@ func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 		//nolint:errcheck
 		w.Write([]byte("[NG] ERROR Refresh Cache.\n"))
 	}
+}
+
+func middlewareAuthAPI(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
+
+		if apikey != "" && rApiKey == apikey {
+			next.ServeHTTP(w, r)
+		} else {
+			//nolint:errcheck
+			w.Write([]byte("Auth ERROR\n"))
+		}
+	})
 }
