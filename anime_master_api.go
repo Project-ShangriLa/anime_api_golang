@@ -14,17 +14,17 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var router = mux.NewRouter()
-
-var cacheBases = make(map[int][]byte)
-var cacheBasesWithOgp = make(map[int][]byte)
-
 const (
 	APIKEY_HEADER_NAME = "X-API-KEY"
 	APIKEY_ENV_NAME    = "X_ANIME_API_KEY"
 	COURSID_MIN        = 1
 	COURSID_MAX        = 104 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数、2039年までリクエストを許容
 )
+
+var router = mux.NewRouter()
+var cacheBases = make(map[int][]byte)
+var cacheBasesWithOgp = make(map[int][]byte)
+var apikey = os.Getenv(APIKEY_ENV_NAME)
 
 func init() {
 	http.Handle("/", router)
@@ -416,7 +416,7 @@ func year2coursID(r *http.Request) int {
 func cacheClear(w http.ResponseWriter, r *http.Request) {
 	rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
 
-	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
+	if apikey != "" && rApiKey == apikey {
 		cacheBases = make(map[int][]byte)
 		cacheBasesWithOgp = make(map[int][]byte)
 		//nolint:errcheck
@@ -430,7 +430,7 @@ func cacheClear(w http.ResponseWriter, r *http.Request) {
 func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 	rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
 
-	if os.Getenv(APIKEY_ENV_NAME) != "" && rApiKey == os.Getenv(APIKEY_ENV_NAME) {
+	if apikey != "" && rApiKey == apikey {
 		cacheBases = make(map[int][]byte)
 		cacheBasesWithOgp = make(map[int][]byte)
 		db := gormConnect()
