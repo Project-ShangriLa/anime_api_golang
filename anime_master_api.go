@@ -15,10 +15,9 @@ import (
 )
 
 const (
-	APIKEY_HEADER_NAME = "X-API-KEY"
-	APIKEY_ENV_NAME    = "X_ANIME_API_KEY"
-	COURSID_MIN        = 1
-	COURSID_MAX        = 104 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数、2039年までリクエストを許容
+	APIKEY_ENV_NAME = "X_ANIME_API_KEY"
+	COURSID_MIN     = 1
+	COURSID_MAX     = 104 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数、2039年までリクエストを許容
 )
 
 var router = mux.NewRouter()
@@ -443,6 +442,7 @@ func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func middlewareAuthAPI(next http.Handler) http.Handler {
+	const APIKEY_HEADER_NAME = "X-API-KEY"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
 
@@ -450,7 +450,7 @@ func middlewareAuthAPI(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		} else {
 			//nolint:errcheck
-			w.Write([]byte("Auth ERROR\n"))
+			w.Write([]byte("authentication error\n"))
 		}
 	})
 }
