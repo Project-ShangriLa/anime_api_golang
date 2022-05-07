@@ -20,3 +20,4 @@ anime_master_api_linux
 anime_api_server
 anime_api_server_linux
 .vscode
+./gen/gen

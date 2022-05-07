@@ -99,5 +99,5 @@ curl --header 'X-CLI-API-KEY:aiueo' http://localhost:8080/anime/v1/twitter/follo
 ### history daily
 
 ```
-curl --header 'X-CLI-API-KEY:aiueo' http://localhost:8080/anime/v1/twitter/follower/history/daily
+curl --header 'X-CLI-API-KEY:aiueo' "http://localhost:8080/anime/v1/twitter/follower/history/daily?account=paripikoumei_PR"
 ```
