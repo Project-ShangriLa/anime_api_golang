@@ -15,7 +15,8 @@ mkmf.log
 /private/
 *.iml
 conf/conf.json
-anime_master_api
 sora_api_go_native
 anime_master_api_linux
+anime_api_server
+anime_api_server_linux
 .vscode
