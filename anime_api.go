@@ -15,15 +15,17 @@ import (
 )
 
 const (
-	APIKEY_ENV_NAME = "X_ANIME_API_KEY"
-	COURSID_MIN     = 1
-	COURSID_MAX     = 104 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数、2039年までリクエストを許容
+	APIKEY_ENV_NAME      = "X_ANIME_API_KEY"
+	API_CLI_KEY_ENV_NAME = "X_ANIME_CLI_API_KEY"
+	COURSID_MIN          = 1
+	COURSID_MAX          = 104 // COURID_IDの理論的最大値 　2014 + COURID_MAX/4 = 年数、2039年までリクエストを許容
 )
 
 var router = mux.NewRouter()
 var cacheBases = make(map[int][]byte)
 var cacheBasesWithOgp = make(map[int][]byte)
 var apikey = os.Getenv(APIKEY_ENV_NAME)
+var cApiKey = os.Getenv(API_CLI_KEY_ENV_NAME)
 
 func init() {
 	http.Handle("/", router)
@@ -44,8 +46,16 @@ func init() {
 	admin.HandleFunc("/refresh", cacheRefresh).Methods("POST")
 
 	admin.Use(middlewareAdminAuthAPI)
-	//TODO
-	// キャッシュ指定クリア 環境変数　認証キーあり
+
+	// リファレンス実装
+	// https://github.com/Project-ShangriLa/sana_server
+	sana := router.PathPrefix("/anime/v1/twitter/follower").Subrouter()
+
+	sana.HandleFunc("/status/bycours", statusByCoursId).Methods("GET")
+
+	sana.HandleFunc("/history/daily", historyDaily).Methods("GET")
+
+	sana.Use(middlewareCliantAuthAPI)
 }
 
 func gormConnect() *gorm.DB {

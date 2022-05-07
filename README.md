@@ -42,13 +42,19 @@ export ANIME_API_DB_PASS=
 export X_ANIME_API_KEY=abcde
 ```
 
+SANA APIのKEYを環境変数で管理しています(初期検証用)
+
+```
+export X_ANIME_CLI_API_KEY=aiueo
+```
+
 ## 実行
 
 ```
 ./anime_api
 ```
 
-## 動作確認
+## 動作確認 Master API
 
 ### COURS
 
@@ -80,4 +86,18 @@ curl -XPOST --header 'X-API-KEY:abcde' http://localhost:8080/anime/v1/master/cac
 
 ```
 curl -XPOST --header 'X-API-KEY:abcde' http://localhost:8080/anime/v1/master/cache/refresh
+```
+
+## 動作確認 Sana API
+
+### status by coursId
+
+```
+curl --header 'X-CLI-API-KEY:aiueo' http://localhost:8080/anime/v1/twitter/follower/status/bycours
+```
+
+### history daily
+
+```
+curl --header 'X-CLI-API-KEY:aiueo' http://localhost:8080/anime/v1/twitter/follower/history/daily
 ```

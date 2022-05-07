@@ -1,4 +1,4 @@
-module github.com/Project-ShangriLa/anime_master_api
+module github.com/Project-ShangriLa/anime_api_golang
 
 go 1.18
 
