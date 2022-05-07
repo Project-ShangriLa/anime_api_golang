@@ -36,14 +36,14 @@ func init() {
 	router.HandleFunc("/anime/v1/master/{year_num:[0-9]{4}}/{cours:[1-4]}", animeAPIReadHandler).Methods("GET")
 
 	// https://github.com/gorilla/mux/issues/445
-	protected := router.PathPrefix("/anime/v1/master/cache").Subrouter()
+	admin := router.PathPrefix("/anime/v1/master/cache").Subrouter()
 
 	// キャッシュ全クリア 環境変数　認証キーあり
-	protected.HandleFunc("/clear", cacheClear).Methods("POST")
+	admin.HandleFunc("/clear", cacheClear).Methods("POST")
 	// キャッシュ全再取得 環境変数　認証キーあり
-	protected.HandleFunc("/refresh", cacheRefresh).Methods("POST")
+	admin.HandleFunc("/refresh", cacheRefresh).Methods("POST")
 
-	protected.Use(middlewareAuthAPI)
+	admin.Use(middlewareAdminAuthAPI)
 	//TODO
 	// キャッシュ指定クリア 環境変数　認証キーあり
 }
@@ -441,7 +441,7 @@ func cacheRefresh(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("[OK] Refresh Cache.\n"))
 }
 
-func middlewareAuthAPI(next http.Handler) http.Handler {
+func middlewareAdminAuthAPI(next http.Handler) http.Handler {
 	const APIKEY_HEADER_NAME = "X-API-KEY"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rApiKey := r.Header.Get(APIKEY_HEADER_NAME)
