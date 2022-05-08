@@ -115,7 +115,7 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 		if tmpDay != getDateSt {
 			resTwhs = append(resTwhs, v)
 			tmpDay = getDateSt
-			log.Println(getDateSt)
+			//log.Println(getDateSt)
 		}
 	}
 
