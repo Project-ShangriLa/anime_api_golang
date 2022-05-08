@@ -65,6 +65,8 @@ func statusByCoursId(w http.ResponseWriter, r *http.Request) {
 func historyDaily(w http.ResponseWriter, r *http.Request) {
 	account := r.FormValue("account")
 	rdays := r.FormValue("days")
+	rStartDate := r.FormValue("startdate")
+	rEndDate := r.FormValue("enddate")
 	const DEFAULT_PDAYS = 30
 	var pastdays int
 	if rdays == "" {
@@ -72,8 +74,16 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 	} else {
 		pastdays, _ = strconv.Atoi(rdays)
 	}
+	enddate := time.Now()
+	startdate := enddate.AddDate(0, 0, pastdays*-1)
 
-	log.Print(account)
+	// startdateパラメタ enddateパラメタ があればそちらを優先させる
+	if rStartDate != "" && rEndDate != "" {
+		startdate, _ = time.Parse("20060102", rStartDate)
+		enddate, _ = time.Parse("20060102", rEndDate)
+		// 指定された日の00:00になるので+1する
+		enddate = enddate.AddDate(0, 0, 1)
+	}
 
 	db := gormConnect()
 	defer db.Close()
@@ -81,16 +91,13 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 	var base model.Basis
 	db.Where("twitter_account = ?", account).Last(&base)
 
-	log.Print(base.ID)
+	log.Print(base.ID, account, startdate, enddate)
 
 	twhs := []model.TwitterStatusHistory{}
 	resTwhs := []model.TwitterStatusHistory{}
 
-	today := time.Now()
-	pastday := today.AddDate(0, 0, pastdays*-1)
-
 	// https://gorm.io/docs/query.html
-	db.Where("bases_id = ?", base.ID).Where("get_date BETWEEN ? AND ?", pastday, today).Find(&twhs)
+	db.Where("bases_id = ?", base.ID).Where("get_date BETWEEN ? AND ?", startdate, enddate).Find(&twhs)
 
 	// TODO 日付の重複をMAPで整理
 

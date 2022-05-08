@@ -102,6 +102,13 @@ curl --header 'X-CLI-API-KEY:aiueo' http://localhost:8080/anime/v1/twitter/follo
 curl --header 'X-CLI-API-KEY:aiueo' "http://localhost:8080/anime/v1/twitter/follower/history/daily?account=paripikoumei_PR"
 ```
 
+#### param days
 ```
 curl --header 'X-CLI-API-KEY:aiueo' "http://localhost:8080/anime/v1/twitter/follower/history/daily?account=usagi_anime&days=3" | jq .
+```
+
+
+#### param startdate and enddate
+```
+curl --header 'X-CLI-API-KEY:aiueo' "http://localhost:8080/anime/v1/twitter/follower/history/daily?account=paripikoumei_PR&startdate=20220501&enddate=20220506" | jq .
 ```
