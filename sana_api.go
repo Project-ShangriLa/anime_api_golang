@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/Project-ShangriLa/anime_api_golang/model"
 	"gorm.io/driver/mysql"
@@ -61,7 +64,14 @@ func statusByCoursId(w http.ResponseWriter, r *http.Request) {
 
 func historyDaily(w http.ResponseWriter, r *http.Request) {
 	account := r.FormValue("account")
-	//days := r.FormValue("days")
+	rdays := r.FormValue("days")
+	const DEFAULT_PDAYS = 30
+	var pastdays int
+	if rdays == "" {
+		pastdays = DEFAULT_PDAYS
+	} else {
+		pastdays, _ = strconv.Atoi(rdays)
+	}
 
 	log.Print(account)
 
@@ -73,5 +83,26 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 
 	log.Print(base.ID)
 
-	w.Write([]byte("[historyDaily OK]\n"))
+	var twhs = []model.TwitterStatusHistory{}
+
+	today := time.Now()
+	pastday := today.AddDate(0, 0, pastdays*-1)
+
+	// https://gorm.io/docs/query.html
+	db.Where("bases_id = ?", base.ID).Where("get_date BETWEEN ? AND ?", pastday, today).Find(&twhs)
+
+	// TODO 日付の重複をMAPで整理
+	// TODO time型の表記がおかしいのをなおす
+	// TODO JSON形式だけでなくCSV形式で返す
+
+	res, err := json.Marshal(twhs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_, error := w.Write(res)
+	if error != nil {
+		log.Println(error)
+	}
 }
