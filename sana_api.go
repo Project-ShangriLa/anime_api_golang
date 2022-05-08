@@ -83,7 +83,8 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 
 	log.Print(base.ID)
 
-	var twhs = []model.TwitterStatusHistory{}
+	twhs := []model.TwitterStatusHistory{}
+	resTwhs := []model.TwitterStatusHistory{}
 
 	today := time.Now()
 	pastday := today.AddDate(0, 0, pastdays*-1)
@@ -94,12 +95,24 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 	// TODO 日付の重複をMAPで整理
 
 	/*
-		 js dateparse
+		 js date parse
 		 d = new Date("2022-05-07T08:01:49Z")
 		 d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDay()
 		->'2022/5/6'
 	*/
-	res, err := json.Marshal(twhs)
+	var tmpDay string
+	for _, v := range twhs {
+		getDateSt := v.GetDate.Format("2006-01-02")
+		//log.Println(getDateSt)
+
+		if tmpDay != getDateSt {
+			resTwhs = append(resTwhs, v)
+			tmpDay = getDateSt
+			log.Println(getDateSt)
+		}
+	}
+
+	res, err := json.Marshal(resTwhs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
