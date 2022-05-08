@@ -92,9 +92,13 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 	db.Where("bases_id = ?", base.ID).Where("get_date BETWEEN ? AND ?", pastday, today).Find(&twhs)
 
 	// TODO 日付の重複をMAPで整理
-	// TODO time型の表記がおかしいのをなおす
-	// TODO JSON形式だけでなくCSV形式で返す
 
+	/*
+		 js dateparse
+		 d = new Date("2022-05-07T08:01:49Z")
+		 d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDay()
+		->'2022/5/6'
+	*/
 	res, err := json.Marshal(twhs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

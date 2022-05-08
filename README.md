@@ -51,7 +51,7 @@ export X_ANIME_CLI_API_KEY=aiueo
 ## 実行
 
 ```
-./anime_api
+./anime_api_server
 ```
 
 ## 動作確認 Master API
