@@ -61,7 +61,7 @@ func main() {
 	//fmt.Println(string(body))
 
 	for _, v := range twhs {
-		r := fmt.Sprintf("%s,%d", v.GetDate.Format("2006-01-02"), v.Follower)
+		r := fmt.Sprintf("%s,%d", v.GetDate.Format("2006/01/02"), v.Follower)
 		println(r)
 	}
 
