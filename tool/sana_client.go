@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/Project-ShangriLa/anime_api_golang/model"
 )
 
 // go build -o sana_client
@@ -51,5 +54,15 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(string(body))
+	twhs := []model.TwitterStatusHistory{}
+
+	json.Unmarshal(body, &twhs)
+
+	//fmt.Println(string(body))
+
+	for _, v := range twhs {
+		r := fmt.Sprintf("%s,%d", v.GetDate.Format("2006-01-02"), v.Follower)
+		println(r)
+	}
+
 }

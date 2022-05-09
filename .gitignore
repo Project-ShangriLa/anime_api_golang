@@ -22,3 +22,4 @@ anime_api_server_linux
 .vscode
 /gen/gen
 /tool/sana_client
+/tool/*.csv
