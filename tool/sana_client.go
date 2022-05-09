@@ -15,23 +15,32 @@ import (
 // go build -o sana_client
 // ./sana_client -k xxxxx -b 1506 -s 20220401 -e 20220506
 // ./sana_client -d http://localhost:8080 -k aiueo -b 1506 -s 20220501 -e 20220506
+// ./sana_client -d http://localhost:8080 -k aiueo -a kimetsu_off -s 20220501 -e 20220506
 func main() {
 	// curl --header 'X-CLI-API-KEY:aiueo' "http://localhost:8080/anime/v1/twitter/follower/history/daily?account=paripikoumei_PR&startdate=20220501&enddate=20220506"
 
 	var domain string
+	var account string
 	var baseId string
 	var startdate string
 	var enddate string
 	var clientApiKey string
 	flag.StringVar(&domain, "d", "https://api.moemoe.tokyo", "Anime API protocol and domain")
+	flag.StringVar(&account, "a", "", "Twitter Account")
 	flag.StringVar(&baseId, "b", "", "Base Id")
 	flag.StringVar(&startdate, "s", "", "start date")
 	flag.StringVar(&enddate, "e", "", "end date")
 	flag.StringVar(&clientApiKey, "k", "", "Cliant API Key")
 	flag.Parse()
 
-	url := fmt.Sprintf("%s/anime/v1/twitter/follower/history/daily?baseid=%s&startdate=%s&enddate=%s",
-		domain, baseId, startdate, enddate)
+	target := "account=" + account
+	// -bオプションがあればそちらを優先
+	if baseId != "" {
+		target = "baseid=" + baseId
+	}
+
+	url := fmt.Sprintf("%s/anime/v1/twitter/follower/history/daily?%s&startdate=%s&enddate=%s",
+		domain, target, startdate, enddate)
 	//println(url)
 
 	ctx := context.Background()

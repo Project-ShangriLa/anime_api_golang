@@ -97,7 +97,8 @@ func historyDaily(w http.ResponseWriter, r *http.Request) {
 		i, _ := strconv.Atoi(rBaseId)
 		baseId = int32(i)
 	} else {
-		db.Where("twitter_account = ?", account).Last(&base)
+		// 続編ものは最初のBaseIDになるので注意、困る場合はbaseIdを指定する
+		db.Where("twitter_account = ?", account).First(&base)
 		baseId = base.ID
 	}
 
