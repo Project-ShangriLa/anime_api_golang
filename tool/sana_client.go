@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 
@@ -16,6 +18,7 @@ import (
 // ./sana_client -k xxxxx -b 1506 -s 20220401 -e 20220506
 // ./sana_client -d http://localhost:8080 -k aiueo -b 1506 -s 20220501 -e 20220506
 // ./sana_client -d http://localhost:8080 -k aiueo -a kimetsu_off -s 20220501 -e 20220506
+// ./sana_client -k xxxxx -a paripikoumei_PR -s 20220401 -e 20220514 -o ~/tmp/paripi.csv
 func main() {
 	// curl --header 'X-CLI-API-KEY:aiueo' "http://localhost:8080/anime/v1/twitter/follower/history/daily?account=paripikoumei_PR&startdate=20220501&enddate=20220506"
 
@@ -25,12 +28,14 @@ func main() {
 	var startdate string
 	var enddate string
 	var clientApiKey string
+	var outFileName string
 	flag.StringVar(&domain, "d", "https://api.moemoe.tokyo", "Anime API protocol and domain")
 	flag.StringVar(&account, "a", "", "Twitter Account")
 	flag.StringVar(&baseId, "b", "", "Base Id")
 	flag.StringVar(&startdate, "s", "", "start date")
 	flag.StringVar(&enddate, "e", "", "end date")
 	flag.StringVar(&clientApiKey, "k", "", "Cliant API Key")
+	flag.StringVar(&outFileName, "o", "", "output File Name")
 	flag.Parse()
 
 	target := "account=" + account
@@ -74,4 +79,33 @@ func main() {
 		fmt.Println(r)
 	}
 
+	if outFileName != "" {
+		createCsv(outFileName, &twhs)
+	}
+
+}
+
+func createCsv(outFileName string, twsh *[]model.TwitterStatusHistory) {
+	f, err := os.OpenFile(outFileName, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	defer w.Flush()
+
+	w.Write([]string{"日付", "フォロワー数"})
+
+	for _, v := range *twsh {
+		date := v.GetDate.Format("2006/01/02")
+		follower := fmt.Sprintf("%d", v.Follower)
+
+		if err := w.Write([]string{date, follower}); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if err := w.Error(); err != nil {
+		log.Fatal(err)
+	}
 }
