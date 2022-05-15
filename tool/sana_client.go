@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/Project-ShangriLa/anime_api_golang/model"
 )
@@ -95,16 +96,24 @@ func createCsv(outFileName string, twsh *[]model.TwitterStatusHistory) {
 	w := csv.NewWriter(f)
 	defer w.Flush()
 
-	w.Write([]string{"日付", "フォロワー数"})
+	w.Write([]string{"年月日", "フォロワー数", "日時増加分"})
 
+	diff := 0
+	preFollower := 0
 	for _, v := range *twsh {
 		date := v.GetDate.Format("2006/01/02")
 		follower := fmt.Sprintf("%d", v.Follower)
 
-		if err := w.Write([]string{date, follower}); err != nil {
+		if preFollower != 0 {
+			diff = int(v.Follower) - preFollower
+		}
+
+		if err := w.Write([]string{date, follower, strconv.Itoa(diff)}); err != nil {
 			log.Fatal(err)
 		}
+		preFollower = int(v.Follower)
 	}
+
 	if err := w.Error(); err != nil {
 		log.Fatal(err)
 	}
